@@ -1,3 +1,7 @@
+// Copyright (c) 2020 Anders Bergh.
+// License: MIT.
+
+// Package ics provides a simple iCalendar encoder.
 package ics
 
 import (
@@ -10,9 +14,14 @@ import (
 	"github.com/anders/utils"
 )
 
+// Event is a single calendar entry. The values must be either string or
+// time.Time.
 type Event map[string]interface{}
+
+// Calendar is a list of events.
 type Calendar []Event
 
+// Encode writes a complete calendar to the specified writer.
 func (cal Calendar) Encode(w io.Writer) error {
 	if _, err := io.WriteString(w, "BEGIN:VCALENDAR\r\n"+
 		"VERSION:2.0\r\n"+
@@ -34,6 +43,8 @@ func (cal Calendar) Encode(w io.Writer) error {
 	return nil
 }
 
+// Encode writes a single event to the specified Writer.
+// Supported values are strings and time.Time.
 func (ev Event) Encode(w io.Writer) error {
 	if _, err := io.WriteString(w, "BEGIN:VEVENT\r\n"); err != nil {
 		return err
@@ -61,6 +72,8 @@ func (ev Event) Encode(w io.Writer) error {
 		s = strings.Replace(s, ";", "\\;", -1)
 		s = strings.Replace(s, ",", "\\,", -1)
 		s = strings.Replace(s, "\n", "\\n", -1)
+
+		k = strings.ToUpper(k)
 
 		lines := utils.SplitLength(k+":"+s, 72)
 		for i, line := range lines {
