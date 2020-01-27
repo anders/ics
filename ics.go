@@ -5,6 +5,7 @@
 package ics
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"sort"
@@ -18,19 +19,59 @@ import (
 // time.Time.
 type Event map[string]interface{}
 
-// Calendar is a list of events.
-type Calendar []Event
+// Calendar holds a list of Events.
+type Calendar struct {
+	Properties map[string]interface{} // VCALENDAR fields
+	Events     []Event                // a list of Events
+}
+
+// NewCalendar returns a new instance of Calendar with some properties preset.
+func NewCalendar() *Calendar {
+	return &Calendar{
+		Properties: map[string]interface{}{
+			"VERSION": "2.0",
+			"PRODID":  "-//github.com/anders/ics",
+			"CALSCAL": "GREGORIAN",
+		},
+	}
+}
+
+// Get returns a property.
+func (c *Calendar) Get(key string) interface{} {
+	return c.Properties[key]
+}
+
+// Set sets a VCALENDAR property.
+func (c *Calendar) Set(key string, value interface{}) {
+	c.Properties[key] = value
+}
+
+// Add adds an object to the calendar.
+func (c *Calendar) Add(obj interface{}) error {
+	switch v := obj.(type) {
+	case Event:
+		c.Events = append(c.Events, v)
+		return nil
+	default:
+		return fmt.Errorf("Add(): unsupported type %T", obj)
+	}
+}
 
 // Encode writes a complete calendar to the specified writer.
 func (cal Calendar) Encode(w io.Writer) error {
-	if _, err := io.WriteString(w, "BEGIN:VCALENDAR\r\n"+
-		"VERSION:2.0\r\n"+
-		"PRODID:-//github.com/anders/ics\r\n"+
-		"CALSCAL:GREGORIAN\r\n"); err != nil {
+	if _, err := io.WriteString(w, "BEGIN:VCALENDAR\r\n"); err != nil {
 		return err
 	}
 
-	for _, ev := range cal {
+	for key, value := range cal.Properties {
+		if err := encodeKV(w, key, value); err != nil {
+			return err
+		}
+	}
+
+	// TODO: handle other types of iCalendar entries.
+
+	for _, ev := range cal.Events {
 		if err := ev.Encode(w); err != nil {
 			return err
 		}
@@ -38,6 +79,40 @@ func (cal Calendar) Encode(w io.Writer) error {
 
 	if _, err := io.WriteString(w, "END:VCALENDAR\r\n"); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func encodeKV(w io.Writer, key string, value interface{}) error {
+	var str string
+	switch v := value.(type) {
+	case string:
+		str = v
+	case time.Time:
+		str = v.In(time.UTC).Format("20060102T150405Z")
+	case fmt.Stringer:
+		str = v.String()
+	default:
+		log.Printf("encodeKV(): key %s: unsupported type %T", key, v)
+	}
+
+	str = strings.Replace(str, "\\", "\\\\", -1)
+	str = strings.Replace(str, ";", "\\;", -1)
+	str = strings.Replace(str, ",", "\\,", -1)
+	str = strings.Replace(str, "\n", "\\n", -1)
+
+	key = strings.ToUpper(key)
+
+	lines := utils.SplitLength(key+":"+str, 72)
+	for i, line := range lines {
+		if i > 0 {
+			line = " " + line
+		}
+		_, err := io.WriteString(w, line+"\r\n")
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -56,34 +131,9 @@ func (ev Event) Encode(w io.Writer) error {
 	}
 	sort.Strings(keys)
 
-	for _, k := range keys {
-		var s string
-		switch v := ev[k].(type) {
-		case string:
-			s = v
-		case time.Time:
-			s = v.In(time.UTC).Format("20060102T150405Z")
-		default:
-			log.Printf("key %s: unsupported type %T in Event.Encode()", k, v)
-			continue
-		}
-
-		s = strings.Replace(s, "\\", "\\\\", -1)
-		s = strings.Replace(s, ";", "\\;", -1)
-		s = strings.Replace(s, ",", "\\,", -1)
-		s = strings.Replace(s, "\n", "\\n", -1)
-
-		k = strings.ToUpper(k)
-
-		lines := utils.SplitLength(k+":"+s, 72)
-		for i, line := range lines {
-			if i > 0 {
-				line = " " + line
-			}
-			_, err := io.WriteString(w, line+"\r\n")
-			if err != nil {
-				return err
-			}
+	for _, key := range keys {
+		if err := encodeKV(w, key, ev[key]); err != nil {
+			return err
 		}
 	}
 
