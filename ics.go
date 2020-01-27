@@ -15,8 +15,8 @@ import (
 	"github.com/anders/utils"
 )
 
-// Event is a single calendar entry. The values must be either string or
-// time.Time.
+// Event is a single calendar entry. Supported types are strings.Stringer,
+// string and time.Time.
 type Event map[string]interface{}
 
 // Calendar holds a list of Events.
@@ -119,7 +119,8 @@ func encodeKV(w io.Writer, key string, value interface{}) error {
 }
 
 // Encode writes a single event to the specified Writer.
-// Supported values are strings and time.Time.
+// Supported values are strings and time.Time, as well as any time that conforms
+// to the Stringer interface.
 func (ev Event) Encode(w io.Writer) error {
 	if _, err := io.WriteString(w, "BEGIN:VEVENT\r\n"); err != nil {
 		return err
