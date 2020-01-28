@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anders/utils"
+	"github.com/anders/strutils"
 )
 
 // Event is a single calendar entry. Supported types are strings.Stringer,
@@ -104,7 +104,7 @@ func encodeKV(w io.Writer, key string, value interface{}) error {
 
 	key = strings.ToUpper(key)
 
-	lines := utils.SplitLength(key+":"+str, 72)
+	lines := strutils.SplitLength(key+":"+str, 72)
 	for i, line := range lines {
 		if i > 0 {
 			line = " " + line

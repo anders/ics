@@ -1,2 +1,2 @@
-github.com/anders/utils v0.0.0-20181013124417-3f23a244cb2d h1:KAr5OTIaTGNH8W0Qcl5a59YlVKaG7CeWKuU5W/ktmB8=
-github.com/anders/utils v0.0.0-20181013124417-3f23a244cb2d/go.mod h1:Y1FpOtLvwEl5j7FL/Fs+KkwQVfjwQ+a0gVPzywI1I34=
+github.com/anders/strutils v0.0.0-20200128213935-096612be1a09 h1:LB257q+Ow3zKpcQuLPZFImyTcIM04XFGSnkvIOlDzw8=
+github.com/anders/strutils v0.0.0-20200128213935-096612be1a09/go.mod h1:Y22GknVhtjcTydKWioGIg9kD6JRMs8EdcrhcSyBhPFg=
