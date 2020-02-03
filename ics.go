@@ -63,7 +63,14 @@ func (cal Calendar) Encode(w io.Writer) error {
 		return err
 	}
 
-	for key, value := range cal.Properties {
+	keys := []string{}
+	for key := range cal.Properties {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		value := cal.Properties[key]
 		if err := encodeKV(w, key, value); err != nil {
 			return err
 		}
